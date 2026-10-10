@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    />
+
+    <title>Emergency Response Command</title>
+
+    <!-- Leaflet -->
+<link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+
+<script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+></script>
+
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- =========================================
+         SIDEBAR
+    ========================================== -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-icon">
+                +
+            </div>
+
+            <div>
+                <h1>RESPONSE</h1>
+                <span>COMMAND CENTER</span>
+            </div>
+        </div>
+
+        <div class="system-status">
+            <span class="status-dot"></span>
+
+            <div>
+                <strong>SYSTEM ONLINE</strong>
+                <small>Receiving live reports</small>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+
+            <div class="section-title">
+                INCIDENT TYPES
+            </div>
+
+            <label class="filter-item">
+                <input
+                    type="checkbox"
+                    class="type-filter"
+                    value="MEDICAL"
+                    checked
+                />
+
+                <span class="filter-color medical"></span>
+
+                <span>Medical</span>
+
+                <strong id="medicalCount">0</strong>
+            </label>
+
+            <label class="filter-item">
+                <input
+                    type="checkbox"
+                    class="type-filter"
+                    value="FOOD"
+                    checked
+                />
+
+                <span class="filter-color food"></span>
+
+                <span>Food</span>
+
+                <strong id="foodCount">0</strong>
+            </label>
+
+            <label class="filter-item">
+                <input
+                    type="checkbox"
+                    class="type-filter"
+                    value="WATER"
+                    checked
+                />
+
+                <span class="filter-color water"></span>
+
+                <span>Water</span>
+
+                <strong id="waterCount">0</strong>
+            </label>
+
+        </div>
+
+
+        <div class="sidebar-section">
+
+            <div class="section-title">
+                SEVERITY
+            </div>
+
+            <label class="severity-filter">
+                <input
+                    type="checkbox"
+                    value="critical"
+                    class="severity-check"
+                    checked
+                />
+
+                <span class="severity-badge critical">9–10</span>
+                Critical
+            </label>
+
+            <label class="severity-filter">
+                <input
+                    type="checkbox"
+                    value="high"
+                    class="severity-check"
+                    checked
+                />
+
+                <span class="severity-badge high">7–8</span>
+                High
+            </label>
+
+            <label class="severity-filter">
+                <input
+                    type="checkbox"
+                    value="medium"
+                    class="severity-check"
+                    checked
+                />
+
+                <span class="severity-badge medium">4–6</span>
+                Medium
+            </label>
+
+            <label class="severity-filter">
+                <input
+                    type="checkbox"
+                    value="low"
+                    class="severity-check"
+                    checked
+                />
+
+                <span class="severity-badge low">1–3</span>
+                Low
+            </label>
+
+        </div>
+
+
+        <div class="sidebar-section">
+
+            <div class="section-title">
+                STATUS
+            </div>
+
+            <select id="statusFilter">
+
+                <option value="ALL">
+                    All statuses
+                </option>
+
+                <option value="CREATED">
+                    Created
+                </option>
+
+                <option value="ACKNOWLEDGED">
+                    Acknowledged
+                </option>
+
+                <option value="RESOLVED">
+                    Resolved
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div class="sidebar-bottom">
+
+            <div class="refresh-info">
+                <span>LAST SYNC</span>
+                <strong id="lastSync">—</strong>
+            </div>
+
+            <button id="refreshButton">
+                ↻ Refresh Data
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =========================================
+         MAIN CONTENT
+    ========================================== -->
+
+    <main class="main">
+
+        <!-- HEADER -->
+
+        <header class="topbar">
+
+            <div>
+
+                <div class="breadcrumb">
+                    OPERATIONS / INCIDENT MONITOR
+                </div>
+
+                <h2>
+                    Emergency Response Overview
+                </h2>
+
+            </div>
+
+            <div class="topbar-right">
+
+                <div class="live-indicator">
+                    <span></span>
+                    LIVE
+                </div>
+
+                <div class="current-time" id="currentTime">
+                    --
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- KPI CARDS -->
+
+        <section class="stats">
+
+            <div class="stat-card">
+
+                <div class="stat-label">
+                    ACTIVE INCIDENTS
+                </div>
+
+                <div
+                    class="stat-value"
+                    id="totalIncidents"
+                >
+                    0
+                </div>
+
+                <div class="stat-description">
+                    All reported incidents
+                </div>
+
+            </div>
+
+
+            <div class="stat-card danger">
+
+                <div class="stat-label">
+                    CRITICAL
+                </div>
+
+                <div
+                    class="stat-value"
+                    id="criticalIncidents"
+                >
+                    0
+                </div>
+
+                <div class="stat-description">
+                    Severity 9–10
+                </div>
+
+            </div>
+
+
+            <div class="stat-card warning">
+
+                <div class="stat-label">
+                    HIGH PRIORITY
+                </div>
+
+                <div
+                    class="stat-value"
+                    id="highIncidents"
+                >
+                    0
+                </div>
+
+                <div class="stat-description">
+                    Severity 7–8
+                </div>
+
+            </div>
+
+
+            <div class="stat-card medical-card">
+
+                <div class="stat-label">
+                    MEDICAL
+                </div>
+
+                <div
+                    class="stat-value"
+                    id="medicalTotal"
+                >
+                    0
+                </div>
+
+                <div class="stat-description">
+                    Medical requests
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- MAP -->
+
+        <section class="map-section">
+
+            <div class="map-header">
+
+                <div>
+                    <strong>LIVE INCIDENT MAP</strong>
+
+                    <span>
+                        Geographic distribution of reported incidents
+                    </span>
+                </div>
+
+                <div class="map-controls">
+
+                    <button id="fitMap">
+                        ⛶ Fit Incidents
+                    </button>
+
+                </div>
+
+            </div>
+
+            <div id="map"></div>
+
+            <div class="map-legend">
+
+                <div>
+                    <span class="legend-dot critical-dot"></span>
+                    Critical
+                </div>
+
+                <div>
+                    <span class="legend-dot high-dot"></span>
+                    High
+                </div>
+
+                <div>
+                    <span class="legend-dot medium-dot"></span>
+                    Medium
+                </div>
+
+                <div>
+                    <span class="legend-dot low-dot"></span>
+                    Low
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- LOWER AREA -->
+
+        <section class="bottom-grid">
+
+            <!-- INCIDENT LIST -->
+
+            <div class="panel incidents-panel">
+
+                <div class="panel-header">
+
+                    <div>
+                        <h3>Recent Incidents</h3>
+                        <span id="visibleCount">
+                            0 incidents
+                        </span>
+                    </div>
+
+                    <select id="sortSelect">
+
+                        <option value="severity">
+                            Highest severity
+                        </option>
+
+                        <option value="newest">
+                            Newest
+                        </option>
+
+                        <option value="oldest">
+                            Oldest
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div
+                    id="incidentList"
+                    class="incident-list"
+                ></div>
+
+            </div>
+
+
+            <!-- ANALYTICS -->
+
+            <div class="panel analytics-panel">
+
+                <div class="panel-header">
+
+                    <div>
+                        <h3>Situation Analysis</h3>
+                        <span>Current incident distribution</span>
+                    </div>
+
+                </div>
+
+
+                <div class="analysis-content">
+
+                    <div class="analysis-block">
+
+                        <div class="analysis-title">
+                            INCIDENT TYPES
+                        </div>
+
+                        <div class="bar-row">
+
+                            <span>Medical</span>
+
+                            <div class="bar">
+                                <div
+                                    id="medicalBar"
+                                    class="bar-fill medical-fill"
+                                ></div>
+                            </div>
+
+                            <strong id="medicalPercentage">
+                                0%
+                            </strong>
+
+                        </div>
+
+
+                        <div class="bar-row">
+
+                            <span>Food</span>
+
+                            <div class="bar">
+                                <div
+                                    id="foodBar"
+                                    class="bar-fill food-fill"
+                                ></div>
+                            </div>
+
+                            <strong id="foodPercentage">
+                                0%
+                            </strong>
+
+                        </div>
+
+
+                        <div class="bar-row">
+
+                            <span>Water</span>
+
+                            <div class="bar">
+                                <div
+                                    id="waterBar"
+                                    class="bar-fill water-fill"
+                                ></div>
+                            </div>
+
+                            <strong id="waterPercentage">
+                                0%
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="analysis-block">
+
+                        <div class="analysis-title">
+                            SEVERITY DISTRIBUTION
+                        </div>
+
+                        <div
+                            id="severityDistribution"
+                            class="severity-distribution"
+                        ></div>
+
+                    </div>
+
+
+                    <div class="priority-alert" id="priorityAlert">
+
+                        <div class="alert-icon">
+                            !
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                PRIORITY ATTENTION
+                            </strong>
+
+                            <p id="priorityText">
+                                No critical incidents detected.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<!-- Incident details modal -->
+
+<div
+    id="incidentModal"
+    class="modal hidden"
+>
+
+    <div class="modal-card">
+
+        <button
+            class="modal-close"
+            id="closeModal"
+        >
+            ×
+        </button>
+
+        <div id="modalContent"></div>
+
+    </div>
+
+</div>
+
+
+<script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+></script>
+
+<script src="app.js"></script>
+
+</body>
+</html>
