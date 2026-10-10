@@ -18,6 +18,7 @@
 <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
 ></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <link rel="stylesheet" href="styles.css" />
 </head>
@@ -517,6 +518,17 @@
                             class="severity-distribution"
                         ></div>
 
+                    </div>
+
+                                        
+                    <div class="analysis-block">
+                        <h3>INCIDENTS OVER TIME</h3>
+                        <canvas id="incidentsOverTimeChart"></canvas>
+                    </div>
+
+                    <div class="analysis-block">
+                        <h3>REQUEST STATUS DISTRIBUTION</h3>
+                        <canvas id="requestStatusChart"></canvas>
                     </div>
 
 

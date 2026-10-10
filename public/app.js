@@ -615,6 +615,7 @@ function updateAnalytics() {
     updateSeverityChart();
 
     updatePriorityAlert();
+    updateNewCharts();
 }
 
 
@@ -645,6 +646,111 @@ function setBar(
 // ==========================================
 // SEVERITY CHART
 // ==========================================
+
+let incidentsOverTimeChart = null;
+let requestStatusChart = null;
+
+function updateNewCharts() {
+    const timeCanvas = document.getElementById("incidentsOverTimeChart");
+    const statusCanvas = document.getElementById("requestStatusChart");
+
+    if (!timeCanvas || !statusCanvas || typeof Chart === "undefined") {
+        return;
+    }
+
+    // Group incidents by date
+    const dailyCounts = {};
+
+    incidents.forEach((incident) => {
+        const rawDate =
+            incident.timestamp ||
+            incident.createdAt ||
+            incident.serverReceivedAt;
+
+        if (!rawDate) return;
+
+        const date = new Date(rawDate);
+
+        if (isNaN(date.getTime())) return;
+
+        const day = date.toLocaleDateString();
+        dailyCounts[day] = (dailyCounts[day] || 0) + 1;
+    });
+
+    const sortedDays = Object.keys(dailyCounts).sort(
+        (a, b) => new Date(a) - new Date(b)
+    );
+
+    const timeLabels = sortedDays.length ? sortedDays : ["No data"];
+    const timeValues = sortedDays.map((day) => dailyCounts[day]);
+
+    if (incidentsOverTimeChart) {
+        incidentsOverTimeChart.destroy();
+    }
+
+    incidentsOverTimeChart = new Chart(timeCanvas, {
+        type: "line",
+        data: {
+            labels: timeLabels,
+            datasets: [{
+                label: "Incidents",
+                data: timeValues.length ? timeValues : [0],
+                borderColor: "#008080",
+                backgroundColor: "rgba(0, 128, 128, 0.15)",
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { precision: 0 }
+                }
+            }
+        }
+    });
+
+    // Count incidents by status
+    const statusCounts = {
+        Created: 0,
+        Acknowledged: 0,
+        Resolved: 0
+    };
+
+    incidents.forEach((incident) => {
+        const status = String(incident.status || "Created").toLowerCase();
+
+        if (status === "acknowledged") {
+            statusCounts.Acknowledged++;
+        } else if (status === "resolved" || status === "closed") {
+            statusCounts.Resolved++;
+        } else {
+            statusCounts.Created++;
+        }
+    });
+
+    if (requestStatusChart) {
+        requestStatusChart.destroy();
+    }
+
+    requestStatusChart = new Chart(statusCanvas, {
+        type: "doughnut",
+        data: {
+            labels: Object.keys(statusCounts),
+            datasets: [{
+                data: Object.values(statusCounts),
+                backgroundColor: ["#64748b", "#f59e0b", "#10b981"]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true
+        }
+    });
+}
 
 function updateSeverityChart() {
 
