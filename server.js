@@ -25,14 +25,32 @@ function readDatabase() {
     }
 
     const data = fs.readFileSync(DB_FILE, "utf8");
+    const records = JSON.parse(data);
 
-    return JSON.parse(data);
+    if (!Array.isArray(records)) {
+      return [];
+    }
+
+    // Keep only the first record for each unique ID
+    const uniqueRecords = [
+      ...new Map(
+        records
+          .filter(record => record && record.id)
+          .map(record => [record.id, record])
+      ).values()
+    ];
+
+    return uniqueRecords;
   } catch (error) {
     console.error("Database read error:", error);
-
     return [];
   }
 }
+
+function writeDatabase(data) {
+  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+}
+
 
 function writeDatabase(data) {
   fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
