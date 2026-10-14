@@ -1,5 +1,181 @@
 [
   {
+    "id": "6dec5019-2284-4e3a-862d-dc60fe583042",
+    "type": "WATER",
+    "latitude": 34.05428602961343,
+    "longitude": -118.24244644052645,
+    "timestamp": 1789539423657,
+    "status": "CREATED",
+    "severity": 3,
+    "reporterId": "af193562",
+    "serverReceivedAt": "2026-09-16T06:19:40.406Z"
+  },
+  {
+    "id": "2217e39b-c0f1-46ac-9a35-543d8d5ffff9",
+    "type": "WATER",
+    "latitude": 34.0591247824742,
+    "longitude": -118.24269169644468,
+    "timestamp": 1789540730249,
+    "status": "CREATED",
+    "severity": 4,
+    "reporterId": "65d96372",
+    "serverReceivedAt": "2026-09-16T06:39:17.444Z"
+  },
+  {
+    "id": "2217e39b-c0f1-46ac-9a35-543d8d5ffff9",
+    "type": "WATER",
+    "latitude": 34.0591247824742,
+    "longitude": -118.24269169644468,
+    "timestamp": 1789540730249,
+    "status": "CREATED",
+    "severity": 4,
+    "reporterId": "65d96372",
+    "serverReceivedAt": "2026-09-16T06:39:40.196Z"
+  },
+  {
+    "id": "2217e39b-c0f1-46ac-9a35-543d8d5ffff9",
+    "type": "WATER",
+    "latitude": 34.0591247824742,
+    "longitude": -118.24269169644468,
+    "timestamp": 1789540730249,
+    "status": "CREATED",
+    "severity": 4,
+    "reporterId": "65d96372",
+    "serverReceivedAt": "2026-09-16T06:42:42.829Z"
+  },
+  {
+    "id": "e5382f03-4577-4b76-9b6f-73cd91f481a1",
+    "type": "MEDICAL",
+    "latitude": 34.05307141041963,
+    "longitude": -118.23837189237106,
+    "timestamp": 1789540948920,
+    "status": "CREATED",
+    "severity": 10,
+    "reporterId": "65d96372",
+    "serverReceivedAt": "2026-09-16T06:42:42.829Z"
+  },
+  {
+    "id": "DEMO006",
+    "type": "FOOD",
+    "latitude": 34.0522,
+    "longitude": -118.2437,
+    "timestamp": 1789620000000,
+    "status": "ACKNOWLEDGED",
+    "severity": 5,
+    "reporterId": "demo01",
+    "serverReceivedAt": "2026-09-17T05:00:00.000Z"
+  },
+  {
+    "id": "DEMO007",
+    "type": "MEDICAL",
+    "latitude": 34.046,
+    "longitude": -118.25,
+    "timestamp": 1789623600000,
+    "status": "RESOLVED",
+    "severity": 8,
+    "reporterId": "demo02",
+    "serverReceivedAt": "2026-09-17T06:00:00.000Z"
+  },
+  {
+    "id": "DEMO008",
+    "type": "WATER",
+    "latitude": 34.06,
+    "longitude": -118.24,
+    "timestamp": 1789706400000,
+    "status": "CREATED",
+    "severity": 3,
+    "reporterId": "demo03",
+    "serverReceivedAt": "2026-09-18T05:00:00.000Z"
+  },
+  {
+    "id": "DEMO009",
+    "type": "FOOD",
+    "latitude": 34.05,
+    "longitude": -118.26,
+    "timestamp": 1789710000000,
+    "status": "ACKNOWLEDGED",
+    "severity": 4,
+    "reporterId": "demo04",
+    "serverReceivedAt": "2026-09-18T06:00:00.000Z"
+  },
+  {
+    "id": "DEMO010",
+    "type": "MEDICAL",
+    "latitude": 34.057,
+    "longitude": -118.245,
+    "timestamp": 1789792800000,
+    "status": "RESOLVED",
+    "severity": 9,
+    "reporterId": "demo05",
+    "serverReceivedAt": "2026-09-19T05:00:00.000Z"
+  },
+  {
+    "id": "DEMO011",
+    "type": "FOOD",
+    "latitude": 34.048,
+    "longitude": -118.235,
+    "timestamp": 1789796400000,
+    "status": "CREATED",
+    "severity": 2,
+    "reporterId": "demo06",
+    "serverReceivedAt": "2026-09-19T06:00:00.000Z"
+  },
+  {
+    "id": "DEMO012",
+    "type": "WATER",
+    "latitude": 34.055,
+    "longitude": -118.248,
+    "timestamp": 1789879200000,
+    "status": "ACKNOWLEDGED",
+    "severity": 6,
+    "reporterId": "demo07",
+    "serverReceivedAt": "2026-09-20T05:00:00.000Z"
+  },
+  {
+    "id": "DEMO013",
+    "type": "MEDICAL",
+    "latitude": 34.062,
+    "longitude": -118.252,
+    "timestamp": 1789882800000,
+    "status": "RESOLVED",
+    "severity": 7,
+    "reporterId": "demo08",
+    "serverReceivedAt": "2026-09-20T06:00:00.000Z"
+  },
+  {
+    "id": "DEMO014",
+    "type": "FOOD",
+    "latitude": 34.044,
+    "longitude": -118.241,
+    "timestamp": 1789965600000,
+    "status": "CREATED",
+    "severity": 3,
+    "reporterId": "demo09",
+    "serverReceivedAt": "2026-09-21T05:00:00.000Z"
+  },
+  {
+    "id": "DEMO015",
+    "type": "WATER",
+    "latitude": 34.051,
+    "longitude": -118.23,
+    "timestamp": 1789969200000,
+    "status": "RESOLVED",
+    "severity": 5,
+    "reporterId": "demo10",
+    "serverReceivedAt": "2026-09-21T06:00:00.000Z"
+  },
+  {
+    "id": "DEMO016",
+    "type": "MEDICAL",
+    "latitude": 34.058,
+    "longitude": -118.238,
+    "timestamp": 1790052000000,
+    "status": "ACKNOWLEDGED",
+    "severity": 10,
+    "reporterId": "demo11",
+    "serverReceivedAt": "2026-09-22T05:00:00.000Z"
+  },
+  {
     "id": "6f1f2d22-d747-4110-a13d-e8b0804e3e74",
     "type": "MEDICAL",
     "latitude": 37.4219983,
@@ -8,7 +184,7 @@
     "status": "CREATED",
     "severity": 1,
     "reporterId": "ae13a51c",
-    "serverReceivedAt": "2026-10-12T09:36:26.919Z"
+    "serverReceivedAt": "2026-10-12T11:01:56.936Z"
   },
   {
     "id": "ff4e69bb-3a6a-47b7-9c2b-9fbfd04927fb",
@@ -19,7 +195,7 @@
     "status": "CREATED",
     "severity": 1,
     "reporterId": "ae13a51c",
-    "serverReceivedAt": "2026-10-12T09:42:15.099Z"
+    "serverReceivedAt": "2026-10-12T11:01:56.937Z"
   },
   {
     "id": "7b6b9eb7-e268-4dc6-af0d-344f2523b1bd",
@@ -30,18 +206,7 @@
     "status": "CREATED",
     "severity": 1,
     "reporterId": "46cf6d75",
-    "serverReceivedAt": "2026-10-12T09:42:15.099Z"
-  },
-  {
-    "id": "6f1f2d22-d747-4110-a13d-e8b0804e3e74",
-    "type": "MEDICAL",
-    "latitude": 37.4219983,
-    "longitude": -122.084,
-    "timestamp": 1791797609638,
-    "status": "CREATED",
-    "severity": 1,
-    "reporterId": "ae13a51c",
-    "serverReceivedAt": "2026-10-12T09:42:16.138Z"
+    "serverReceivedAt": "2026-10-12T11:01:56.937Z"
   },
   {
     "id": "ff4e69bb-3a6a-47b7-9c2b-9fbfd04927fb",
@@ -52,7 +217,7 @@
     "status": "CREATED",
     "severity": 1,
     "reporterId": "ae13a51c",
-    "serverReceivedAt": "2026-10-12T09:42:16.138Z"
+    "serverReceivedAt": "2026-10-12T11:01:57.107Z"
   },
   {
     "id": "7b6b9eb7-e268-4dc6-af0d-344f2523b1bd",
@@ -63,6 +228,237 @@
     "status": "CREATED",
     "severity": 1,
     "reporterId": "46cf6d75",
-    "serverReceivedAt": "2026-10-12T09:42:16.138Z"
+    "serverReceivedAt": "2026-10-12T11:01:57.107Z"
+  },
+  {
+    "id": "ff4e69bb-3a6a-47b7-9c2b-9fbfd04927fb",
+    "type": "FOOD",
+    "latitude": 37.4219983,
+    "longitude": -122.084,
+    "timestamp": 1791797783656,
+    "status": "CREATED",
+    "severity": 1,
+    "reporterId": "ae13a51c",
+    "serverReceivedAt": "2026-10-12T11:03:05.655Z"
+  },
+  {
+    "id": "7b6b9eb7-e268-4dc6-af0d-344f2523b1bd",
+    "type": "WATER",
+    "latitude": 13.0492,
+    "longitude": 80.0839317,
+    "timestamp": 1791798133690,
+    "status": "CREATED",
+    "severity": 1,
+    "reporterId": "46cf6d75",
+    "serverReceivedAt": "2026-10-12T11:03:05.655Z"
+  },
+  {
+    "id": "6f1f2d22-d747-4110-a13d-e8b0804e3e74",
+    "type": "MEDICAL",
+    "latitude": 37.4219983,
+    "longitude": -122.084,
+    "timestamp": 1791797609638,
+    "status": "CREATED",
+    "severity": 1,
+    "reporterId": "ae13a51c",
+    "serverReceivedAt": "2026-10-12T11:03:09.589Z"
+  },
+  {
+    "id": "ff4e69bb-3a6a-47b7-9c2b-9fbfd04927fb",
+    "type": "FOOD",
+    "latitude": 37.4219983,
+    "longitude": -122.084,
+    "timestamp": 1791797783656,
+    "status": "CREATED",
+    "severity": 1,
+    "reporterId": "ae13a51c",
+    "serverReceivedAt": "2026-10-12T11:03:09.589Z"
+  },
+  {
+    "id": "7b6b9eb7-e268-4dc6-af0d-344f2523b1bd",
+    "type": "WATER",
+    "latitude": 13.0492,
+    "longitude": 80.0839317,
+    "timestamp": 1791798133690,
+    "status": "CREATED",
+    "severity": 1,
+    "reporterId": "46cf6d75",
+    "serverReceivedAt": "2026-10-12T11:03:09.589Z"
+  },
+  {
+    "id": "ff4e69bb-3a6a-47b7-9c2b-9fbfd04927fb",
+    "type": "FOOD",
+    "latitude": 37.4219983,
+    "longitude": -122.084,
+    "timestamp": 1791797783656,
+    "status": "CREATED",
+    "severity": 1,
+    "reporterId": "ae13a51c",
+    "serverReceivedAt": "2026-10-12T11:03:31.050Z"
+  },
+  {
+    "id": "7b6b9eb7-e268-4dc6-af0d-344f2523b1bd",
+    "type": "WATER",
+    "latitude": 13.0492,
+    "longitude": 80.0839317,
+    "timestamp": 1791798133690,
+    "status": "CREATED",
+    "severity": 1,
+    "reporterId": "46cf6d75",
+    "serverReceivedAt": "2026-10-12T11:03:31.050Z"
+  },
+  {
+    "id": "8e761edc-533c-42d6-9c25-4cabd3f71029",
+    "type": "FOOD",
+    "latitude": 13.0492,
+    "longitude": 80.0839317,
+    "timestamp": 1791803009775,
+    "status": "CREATED",
+    "severity": 5,
+    "reporterId": "46cf6d75",
+    "serverReceivedAt": "2026-10-12T11:03:31.050Z"
+  },
+  {
+    "id": "6f1f2d22-d747-4110-a13d-e8b0804e3e74",
+    "type": "MEDICAL",
+    "latitude": 37.4219983,
+    "longitude": -122.084,
+    "timestamp": 1791797609638,
+    "status": "CREATED",
+    "severity": 1,
+    "reporterId": "ae13a51c",
+    "serverReceivedAt": "2026-10-12T11:03:31.117Z"
+  },
+  {
+    "id": "ff4e69bb-3a6a-47b7-9c2b-9fbfd04927fb",
+    "type": "FOOD",
+    "latitude": 37.4219983,
+    "longitude": -122.084,
+    "timestamp": 1791797783656,
+    "status": "CREATED",
+    "severity": 1,
+    "reporterId": "ae13a51c",
+    "serverReceivedAt": "2026-10-12T11:03:31.117Z"
+  },
+  {
+    "id": "7b6b9eb7-e268-4dc6-af0d-344f2523b1bd",
+    "type": "WATER",
+    "latitude": 13.0492,
+    "longitude": 80.0839317,
+    "timestamp": 1791798133690,
+    "status": "CREATED",
+    "severity": 1,
+    "reporterId": "46cf6d75",
+    "serverReceivedAt": "2026-10-12T11:03:31.117Z"
+  },
+  {
+    "id": "8e761edc-533c-42d6-9c25-4cabd3f71029",
+    "type": "FOOD",
+    "latitude": 13.0492,
+    "longitude": 80.0839317,
+    "timestamp": 1791803009775,
+    "status": "CREATED",
+    "severity": 5,
+    "reporterId": "46cf6d75",
+    "serverReceivedAt": "2026-10-12T11:03:31.117Z"
+  },
+  {
+    "id": "6f1f2d22-d747-4110-a13d-e8b0804e3e74",
+    "type": "MEDICAL",
+    "latitude": 37.4219983,
+    "longitude": -122.084,
+    "timestamp": 1791797609638,
+    "status": "CREATED",
+    "severity": 1,
+    "reporterId": "ae13a51c",
+    "serverReceivedAt": "2026-10-12T11:10:21.911Z"
+  },
+  {
+    "id": "ff4e69bb-3a6a-47b7-9c2b-9fbfd04927fb",
+    "type": "FOOD",
+    "latitude": 37.4219983,
+    "longitude": -122.084,
+    "timestamp": 1791797783656,
+    "status": "CREATED",
+    "severity": 1,
+    "reporterId": "ae13a51c",
+    "serverReceivedAt": "2026-10-12T11:10:21.911Z"
+  },
+  {
+    "id": "7b6b9eb7-e268-4dc6-af0d-344f2523b1bd",
+    "type": "WATER",
+    "latitude": 13.0492,
+    "longitude": 80.0839317,
+    "timestamp": 1791798133690,
+    "status": "CREATED",
+    "severity": 1,
+    "reporterId": "46cf6d75",
+    "serverReceivedAt": "2026-10-12T11:10:21.911Z"
+  },
+  {
+    "id": "8e761edc-533c-42d6-9c25-4cabd3f71029",
+    "type": "FOOD",
+    "latitude": 13.0492,
+    "longitude": 80.0839317,
+    "timestamp": 1791803009775,
+    "status": "CREATED",
+    "severity": 5,
+    "reporterId": "46cf6d75",
+    "serverReceivedAt": "2026-10-12T11:10:21.911Z"
+  },
+  {
+    "id": "8f05bb70-0975-4252-813d-2b6a754d881a",
+    "type": "WATER",
+    "latitude": 12.9903283,
+    "longitude": 80.2034083,
+    "timestamp": 1791803418100,
+    "status": "CREATED",
+    "severity": 1,
+    "reporterId": "ae13a51c",
+    "serverReceivedAt": "2026-10-12T11:10:21.911Z"
+  },
+  {
+    "id": "ff4e69bb-3a6a-47b7-9c2b-9fbfd04927fb",
+    "type": "FOOD",
+    "latitude": 37.4219983,
+    "longitude": -122.084,
+    "timestamp": 1791797783656,
+    "status": "CREATED",
+    "severity": 1,
+    "reporterId": "ae13a51c",
+    "serverReceivedAt": "2026-10-12T11:10:23.411Z"
+  },
+  {
+    "id": "7b6b9eb7-e268-4dc6-af0d-344f2523b1bd",
+    "type": "WATER",
+    "latitude": 13.0492,
+    "longitude": 80.0839317,
+    "timestamp": 1791798133690,
+    "status": "CREATED",
+    "severity": 1,
+    "reporterId": "46cf6d75",
+    "serverReceivedAt": "2026-10-12T11:10:23.411Z"
+  },
+  {
+    "id": "8e761edc-533c-42d6-9c25-4cabd3f71029",
+    "type": "FOOD",
+    "latitude": 13.0492,
+    "longitude": 80.0839317,
+    "timestamp": 1791803009775,
+    "status": "CREATED",
+    "severity": 5,
+    "reporterId": "46cf6d75",
+    "serverReceivedAt": "2026-10-12T11:10:23.411Z"
+  },
+  {
+    "id": "8f05bb70-0975-4252-813d-2b6a754d881a",
+    "type": "WATER",
+    "latitude": 12.9903283,
+    "longitude": 80.2034083,
+    "timestamp": 1791803418100,
+    "status": "CREATED",
+    "severity": 1,
+    "reporterId": "ae13a51c",
+    "serverReceivedAt": "2026-10-12T11:10:23.411Z"
   }
 ]

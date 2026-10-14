@@ -31,16 +31,9 @@ function readDatabase() {
       return [];
     }
 
-    // Keep only the first record for each unique ID
-    const uniqueRecords = [
-      ...new Map(
-        records
-          .filter(record => record && record.id)
-          .map(record => [record.id, record])
-      ).values()
-    ];
-
-    return uniqueRecords;
+    // Preserve received rows so the dashboard can show how many repeated IDs
+    // arrived. The browser deduplicates before computing report statistics.
+    return records.filter(record => record && record.id != null && String(record.id).trim() !== "");
   } catch (error) {
     console.error("Database read error:", error);
     return [];
@@ -51,10 +44,6 @@ function writeDatabase(data) {
   fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 }
 
-
-function writeDatabase(data) {
-  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
-}
 
 // ============================================
 // HOME PAGE
@@ -126,7 +115,6 @@ app.get("/api/incidents", (req, res) => {
         requests
     });
 });
-
 
 // ============================================
 // CLEAR DATABASE - TESTING ONLY

@@ -3,6 +3,13 @@
 // ==========================================
 
 let incidents = [];
+let rawIncidents = [];
+let duplicateCount = 0;
+let reportConfidence = new Map();
+let affectedAreas = [];
+const AREA_DISTANCE_KM = 1;
+let areaLayers = new Map();
+let selectedAreaId = null;
 
 let markers = new Map();
 
@@ -18,6 +25,8 @@ const map = L.map("map", {
     14
 );
 
+map.createPane("areaGridPane");
+map.getPane("areaGridPane").style.zIndex = 390;
 
 // Real OpenStreetMap tiles
 L.tileLayer(
@@ -35,20 +44,85 @@ L.tileLayer(
 // ==========================================
 
 function severityClass(severity) {
-
-    if (severity >= 9) {
+    const value = getFiniteNumber(severity);
+    const { min, max } = getSeverityRange();
+    if (value === null) return "low";
+    const normalized = max > min ? (value - min) / (max - min) : 0;
+    if (normalized >= 0.8) {
         return "critical";
     }
 
-    if (severity >= 7) {
+    if (normalized >= 0.6) {
         return "high";
     }
 
-    if (severity >= 4) {
+    if (normalized >= 0.3) {
         return "medium";
     }
 
     return "low";
+}
+
+function getSeverityRange() {
+    const values = incidents.map(item => getFiniteNumber(item.severity)).filter(value => value !== null);
+    return { min: values.length ? Math.min(...values) : 0, max: values.length ? Math.max(...values) : 0 };
+}
+
+function getFiniteNumber(value) {
+    if ((typeof value !== "number" && typeof value !== "string") || (typeof value === "string" && value.trim() === "")) {
+        return null;
+    }
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+}
+
+function isValidLocation(report) {
+    const lat = getFiniteNumber(report?.latitude), lon = getFiniteNumber(report?.longitude);
+    return lat !== null && lon !== null && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+}
+
+function calculateDistanceKm(a, b) {
+    const radians = degrees => degrees * Math.PI / 180;
+    const lat1 = radians(getFiniteNumber(a.latitude)), lat2 = radians(getFiniteNumber(b.latitude));
+    const dLat = lat2 - lat1, dLon = radians(getFiniteNumber(b.longitude) - getFiniteNumber(a.longitude));
+    const h = Math.min(1, Math.max(0, Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2));
+    return 6371 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+}
+
+function deriveReportConfidence(rows) {
+    const byId = new Map();
+    rows.forEach(report => {
+        if (!report || report.id == null || String(report.id).trim() === "") return;
+        const key = String(report.id).trim();
+        if (!byId.has(key)) byId.set(key, []);
+        byId.get(key).push(report);
+    });
+    duplicateCount = [...byId.values()].reduce((sum, copies) => sum + Math.max(0, copies.length - 1), 0);
+    incidents = [...byId.values()].map(copies => copies[copies.length - 1]);
+    reportConfidence = new Map(incidents.map(report => {
+        const copies = byId.get(String(report.id).trim()) || [];
+        const reporter = String(report.reporterId ?? "").trim();
+        const independent = new Set(incidents.filter(other => String(other.id).trim() !== String(report.id).trim() && other.type === report.type && isValidLocation(other) && isValidLocation(report) && calculateDistanceKm(report, other) <= AREA_DISTANCE_KM)
+            .map(other => String(other.reporterId ?? "").trim()).filter(id => id && id !== reporter));
+        const hasCorroboration = Boolean(reporter && independent.size);
+        const score = Math.max(0, Math.min(100, 20 + (reporter ? 25 : 0) + (hasCorroboration ? 35 : 0) - (copies.length > 1 ? 25 : 0)));
+        const status = copies.length > 1 ? "Potential duplicate" : independent.size && reporter ? "Verified" : "Pending";
+        return [report.id, { score, status, independent: independent.size }];
+    }));
+}
+
+function deriveAffectedAreas() {
+    if (!window.AreaAggregation) {
+        throw new Error("Area aggregation module did not load");
+    }
+    const result = window.AreaAggregation.aggregateReportsByGrid(
+        incidents,
+        severity => severityClass(severity)
+    );
+    affectedAreas = result.areas;
+    if (selectedAreaId && !affectedAreas.some(area => area.id === selectedAreaId)) {
+        selectedAreaId = null;
+    }
 }
 
 
@@ -92,7 +166,9 @@ function formatDate(timestamp) {
 
 
 function formatCoordinates(latitude, longitude) {
-
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        return "Unknown";
+    }
     return `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
 }
 
@@ -113,9 +189,10 @@ async function loadIncidents() {
 
         console.log("Database response:", data);
 
-        incidents = Array.isArray(data.requests)
-            ? data.requests
-            : [];
+        rawIncidents = Array.isArray(data.requests) ? data.requests : [];
+        deriveReportConfidence(rawIncidents);
+        deriveAffectedAreas();
+        updateStatusFilter();
 
         updateDashboard();
 
@@ -128,6 +205,20 @@ async function loadIncidents() {
         document.getElementById("lastSync").textContent =
             "OFFLINE";
     }
+}
+
+function updateStatusFilter() {
+    const filter = document.getElementById("statusFilter");
+    const selected = filter.value;
+    const statusOptions = new Map();
+    incidents.forEach(report => {
+        const label = String(report.status || "Unknown").trim() || "Unknown";
+        if (!statusOptions.has(label.toUpperCase())) statusOptions.set(label.toUpperCase(), label);
+    });
+    const statuses = [...statusOptions.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+    filter.replaceChildren(new Option("All statuses", "ALL"));
+    statuses.forEach(([value, label]) => filter.add(new Option(label, value)));
+    filter.value = statusOptions.has(selected) ? selected : "ALL";
 }
 
 
@@ -158,12 +249,12 @@ function getFilteredIncidents() {
 
         const severityAllowed =
             enabledSeverity.includes(
-                severityClass(Number(incident.severity))
+                severityClass(getFiniteNumber(incident.severity))
             );
 
         const statusAllowed =
             status === "ALL" ||
-            incident.status === status;
+            (String(incident.status || "Unknown").trim() || "Unknown").toUpperCase() === status;
 
         return (
             typeAllowed &&
@@ -180,13 +271,18 @@ function getFilteredIncidents() {
 
 function updateDashboard() {
 
+    deriveReportConfidence(rawIncidents);
+    deriveAffectedAreas();
+
     updateCounts();
 
     updateMap();
 
     updateIncidentList();
+    renderAreaDetails(affectedAreas.find(area => area.id === selectedAreaId));
 
     updateAnalytics();
+    updateDecisionTables();
 }
 
 
@@ -199,17 +295,9 @@ function updateCounts() {
     const total =
         incidents.length;
 
-    const critical =
-        incidents.filter(
-            i => Number(i.severity) >= 9
-        ).length;
+    const critical = [...reportConfidence.values()].filter(item => item.status === "Pending").length;
 
-    const high =
-        incidents.filter(
-            i =>
-                Number(i.severity) >= 7 &&
-                Number(i.severity) <= 8
-        ).length;
+    const high = duplicateCount;
 
     const medical =
         incidents.filter(
@@ -236,8 +324,7 @@ function updateCounts() {
     document.getElementById("highIncidents")
         .textContent = high;
 
-    document.getElementById("medicalTotal")
-        .textContent = medical;
+    document.getElementById("medicalTotal").textContent = affectedAreas.length;
 
 
     document.getElementById("medicalCount")
@@ -258,7 +345,7 @@ function updateCounts() {
 function createMarker(incident) {
 
     const severity =
-        Number(incident.severity);
+        getFiniteNumber(incident.severity);
 
     const className =
         severityClass(severity);
@@ -282,8 +369,8 @@ function createMarker(incident) {
     const marker =
         L.marker(
             [
-                Number(incident.latitude),
-                Number(incident.longitude)
+                getFiniteNumber(incident.latitude),
+                getFiniteNumber(incident.longitude)
             ],
             {
                 icon
@@ -301,7 +388,7 @@ function createMarker(incident) {
 
         <div class="popup-row">
             <span>Severity</span>
-            <strong>${severity}/10</strong>
+            <strong>${severity !== null ? severity : "Unknown"}</strong>
         </div>
 
         <div class="popup-row">
@@ -322,6 +409,8 @@ function createMarker(incident) {
 
 
     marker.on("click", () => {
+        const area = affectedAreas.find(candidate => candidate.reports.some(report => String(report.id) === String(incident.id)));
+        if (area) selectArea(area.id);
         openIncident(incident);
     });
 
@@ -335,6 +424,7 @@ function updateMap() {
     const filtered =
         getFilteredIncidents();
 
+    renderAreaGrid();
 
     // Remove old markers
     markers.forEach(marker => {
@@ -349,10 +439,7 @@ function updateMap() {
     // Add current markers
     filtered.forEach(incident => {
 
-        if (
-            typeof incident.latitude !== "number" ||
-            typeof incident.longitude !== "number"
-        ) {
+        if (!isValidLocation(incident)) {
             return;
         }
 
@@ -368,6 +455,111 @@ function updateMap() {
             marker
         );
 
+    });
+}
+
+function getAreaColor(level) {
+    return {
+        critical: "#ef4444",
+        high: "#f97316",
+        medium: "#facc15",
+        low: "#22c55e",
+        unknown: "#64748b"
+    }[level] || "#64748b";
+}
+
+function buildAreaTooltip(area) {
+    const typeBreakdown = Object.entries(area.typeCounts)
+        .map(([type, count]) => `<span>${escapeHtml(type)}: <strong>${count}</strong></span>`)
+        .join("");
+    const statusBreakdown = Object.entries(area.statusCounts)
+        .map(([status, count]) => `<span>${escapeHtml(status)}: <strong>${count}</strong></span>`)
+        .join("");
+    const lastUpdate = area.lastReportUpdate === null ? "Unknown" : formatDate(area.lastReportUpdate);
+    const maximumSeverity = area.maximumSeverity === null ? "Unknown" : escapeHtml(area.maximumSeverity);
+    const centerLatitude = area.bounds.centerLatitude;
+    const centerLongitude = (area.bounds.west + area.bounds.east) / 2;
+    return `<div class="area-map-tooltip">
+        <strong class="area-tooltip-title">Grid area ${area.id}</strong>
+        <span>${centerLatitude.toFixed(4)}, ${centerLongitude.toFixed(4)} · 1 km × 1 km cell</span>
+        <span class="area-tooltip-severity"><i style="background:${getAreaColor(area.severityLevel)}"></i>${escapeHtml(area.severityLevel.toUpperCase())} severity · max supplied value ${maximumSeverity}</span>
+        <span>${area.totalRequests} unique request${area.totalRequests === 1 ? "" : "s"} · ${area.highSeverityCount} high-severity</span>
+        <span class="area-tooltip-heading">REQUEST TYPES</span><div class="area-tooltip-breakdown">${typeBreakdown || "<span>None</span>"}</div>
+        <span class="area-tooltip-heading">REQUEST STATUS</span><div class="area-tooltip-breakdown">${statusBreakdown || "<span>None</span>"}</div>
+        <span class="area-tooltip-updated">Last report update: ${escapeHtml(lastUpdate)}</span>
+    </div>`;
+}
+
+function buildAreaPopup(area) {
+    return buildAreaTooltip(area);
+}
+
+function selectArea(areaId) {
+    selectedAreaId = areaId;
+    const area = affectedAreas.find(candidate => candidate.id === areaId);
+    renderAreaDetails(area);
+    document.querySelectorAll(".area-table-row").forEach(row => {
+        row.classList.toggle("selected-area-row", row.dataset.areaId === areaId);
+    });
+    areaLayers.forEach((layer, id) => layer.setStyle({
+        weight: id === areaId ? 3 : 2,
+        fillOpacity: id === areaId ? 0.4 : 0.22
+    }));
+}
+
+function renderAreaDetails(area) {
+    const details = document.getElementById("areaDetails");
+    if (!area) {
+        details.innerHTML = '<div class="empty-state">Select a map cell or report to see its area statistics.</div>';
+        return;
+    }
+    const typeSummary = Object.entries(area.typeCounts)
+        .map(([type, count]) => `<span><strong>${count}</strong> ${escapeHtml(type)}</span>`).join("");
+    const statusSummary = Object.entries(area.statusCounts)
+        .map(([status, count]) => `<span><strong>${count}</strong> ${escapeHtml(status)}</span>`).join("");
+    const reports = area.reports.map(report =>
+        `<tr><td>${escapeHtml(report.id)}</td><td>${escapeHtml(report.type || "Unknown")}</td><td>${escapeHtml(report.status || "Unknown")}</td><td>${escapeHtml(report.severity ?? "Unknown")}</td></tr>`
+    ).join("");
+    const update = area.lastReportUpdate === null ? "Unknown" : formatDate(area.lastReportUpdate);
+    details.innerHTML = `<div class="area-detail-summary">
+        <div><span>AREA</span><strong>Grid ${area.id}</strong><small>${area.bounds.centerLatitude.toFixed(4)}, ${((area.bounds.west + area.bounds.east) / 2).toFixed(4)} · 1 km × 1 km</small></div>
+        <div><span>SEVERITY</span><strong class="area-detail-severity ${area.severityLevel}">${escapeHtml(area.severityLevel.toUpperCase())}</strong><small>Maximum supplied value: ${escapeHtml(area.maximumSeverity ?? "Unknown")}</small></div>
+        <div><span>UNIQUE REQUESTS</span><strong>${area.totalRequests}</strong><small>${area.highSeverityCount} high-severity request(s)</small></div>
+        <div><span>LAST REPORT UPDATE</span><strong>${escapeHtml(update)}</strong></div>
+    </div>
+    <div class="area-detail-breakdowns"><div><h4>Request types</h4><div class="area-detail-tags">${typeSummary || "<span>None</span>"}</div></div><div><h4>Request statuses</h4><div class="area-detail-tags">${statusSummary || "<span>None</span>"}</div></div></div>
+    <div class="table-wrap"><table class="operations-table"><thead><tr><th>Request ID</th><th>Type</th><th>Status</th><th>Supplied severity</th></tr></thead><tbody>${reports}</tbody></table></div>`;
+}
+
+function renderAreaGrid() {
+    areaLayers.forEach(layer => map.removeLayer(layer));
+    areaLayers.clear();
+    affectedAreas.forEach(area => {
+        const color = getAreaColor(area.severityLevel);
+        const bounds = [[area.bounds.south, area.bounds.west], [area.bounds.north, area.bounds.east]];
+        const layer = L.rectangle(bounds, {
+            pane: "areaGridPane",
+            color,
+            fillColor: color,
+            weight: 2,
+            fillOpacity: selectedAreaId === area.id ? 0.4 : 0.22
+        }).addTo(map);
+        layer.bindTooltip(buildAreaTooltip(area), {
+            sticky: true,
+            direction: "top",
+            opacity: 0.98,
+            className: "area-leaflet-tooltip"
+        });
+        layer.bindPopup(buildAreaPopup(area), { maxWidth: 360 });
+        layer.on({
+            mouseover: () => layer.setStyle({ weight: 4, fillOpacity: 0.42 }),
+            mouseout: () => layer.setStyle({
+                weight: selectedAreaId === area.id ? 3 : 2,
+                fillOpacity: selectedAreaId === area.id ? 0.4 : 0.22
+            }),
+            click: () => selectArea(area.id)
+        });
+        areaLayers.set(area.id, layer);
     });
 }
 
@@ -389,19 +581,11 @@ function fitMap() {
 
     const coordinates =
         filtered
-            .filter(
-                incident =>
-                    Number.isFinite(
-                        Number(incident.latitude)
-                    ) &&
-                    Number.isFinite(
-                        Number(incident.longitude)
-                    )
-            )
+            .filter(isValidLocation)
             .map(
                 incident => [
-                    Number(incident.latitude),
-                    Number(incident.longitude)
+                    getFiniteNumber(incident.latitude),
+                    getFiniteNumber(incident.longitude)
                 ]
             );
 
@@ -494,7 +678,7 @@ function updateIncidentList() {
         sorted.map(incident => {
 
             const severity =
-                Number(incident.severity);
+                getFiniteNumber(incident.severity);
 
             const className =
                 severityClass(severity);
@@ -507,7 +691,7 @@ function updateIncidentList() {
                 >
 
                     <div class="incident-severity ${className}">
-                        ${severity}
+                        ${severity !== null ? severity : "Unknown"}
                     </div>
 
                     <div class="incident-main">
@@ -522,15 +706,15 @@ function updateIncidentList() {
                             ${formatDate(incident.timestamp)}
                             ·
                             ${formatCoordinates(
-                                Number(incident.latitude),
-                                Number(incident.longitude)
+                                getFiniteNumber(incident.latitude),
+                                getFiniteNumber(incident.longitude)
                             )}
                         </span>
 
                     </div>
 
                     <div class="incident-status">
-                        ${incident.status}
+                        <span>${incident.status || "Unknown"}</span><span class="verification-badge ${reportConfidence.get(incident.id)?.status === "Verified" ? "verified" : reportConfidence.get(incident.id)?.status === "Potential duplicate" ? "duplicate" : "pending"}">${reportConfidence.get(incident.id)?.status || "Pending"} · ${reportConfidence.get(incident.id)?.score ?? 20}%</span>
                     </div>
 
                 </div>
@@ -554,6 +738,9 @@ function updateIncidentList() {
                         );
 
                     if (incident) {
+                        const area = affectedAreas.find(candidate =>
+                            candidate.reports.some(report => String(report.id) === String(incident.id)));
+                        if (area) selectArea(area.id);
                         openIncident(incident);
                     }
 
@@ -612,10 +799,40 @@ function updateAnalytics() {
     );
 
 
-    updateSeverityChart();
-
     updatePriorityAlert();
     updateNewCharts();
+}
+
+function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+}
+
+function updateDecisionTables() {
+    const areaList = document.getElementById("areaList");
+    const summary = document.getElementById("verificationSummary");
+    if (!areaList || !summary) return;
+    const counts = [...reportConfidence.values()].reduce((result, report) => { result[report.status] = (result[report.status] || 0) + 1; return result; }, {});
+    summary.innerHTML = `<span><strong>${counts.Verified || 0}</strong> Verified</span><span><strong>${counts.Pending || 0}</strong> Pending</span><span><strong>${counts["Potential duplicate"] || 0}</strong> Potential duplicates</span><span><strong>${duplicateCount}</strong> Duplicate rows</span>`;
+    if (!affectedAreas.length) {
+        areaList.innerHTML = '<div class="empty-state">No reports with valid coordinates are available for 1 km grid aggregation.</div>';
+    } else {
+        areaList.innerHTML = `<table class="operations-table"><thead><tr><th>Grid area</th><th>Unique requests</th><th>Emergency type mix</th><th>Request status</th><th>Severity</th></tr></thead><tbody>${affectedAreas.map(area => `<tr class="area-table-row ${["high", "critical"].includes(area.severityLevel) ? "priority-row" : ""} ${selectedAreaId === area.id ? "selected-area-row" : ""}" data-area-id="${escapeHtml(area.id)}"><td><strong>Grid ${escapeHtml(area.id)}</strong><small>${area.bounds.centerLatitude.toFixed(4)}, ${((area.bounds.west + area.bounds.east) / 2).toFixed(4)} · 1 km × 1 km</small></td><td>${area.totalRequests}</td><td>${area.types.map(type => `${escapeHtml(type)} (${area.typeCounts[type]})`).join(", ") || "—"}</td><td>${Object.entries(area.statusCounts).map(([status, count]) => `${escapeHtml(status)} (${count})`).join(", ")}</td><td><span class="severity-pill ${area.severityLevel}">${escapeHtml(area.severityLevel.toUpperCase())} · max ${escapeHtml(area.maximumSeverity ?? "Unknown")} · ${area.highSeverityCount} high</span></td></tr>`).join("")}</tbody></table>`;
+        areaList.querySelectorAll("[data-area-id]").forEach(row => {
+            row.addEventListener("click", () => selectArea(row.dataset.areaId));
+        });
+    }
+    const visible = getFilteredIncidents();
+    const values = visible.map(item => getFiniteNumber(item.severity)).filter(value => value !== null);
+    const severityContainer = document.getElementById("severityDistribution");
+    if (!values.length) severityContainer.innerHTML = '<div class="empty-state">No severity values available.</div>';
+    else {
+        const min = Math.min(...values), max = Math.max(...values);
+        const frequency = new Map();
+        values.forEach(value => frequency.set(value, (frequency.get(value) || 0) + 1));
+        const maximum = Math.max(...frequency.values(), 1);
+        severityContainer.innerHTML = [...frequency.entries()].sort((a, b) => a[0] - b[0]).map(([value, count]) => `<div class="severity-column"><div class="bar"><div class="fill" style="height:${(count / maximum) * 100}%"></div></div><span>${value}</span></div>`).join("");
+        severityContainer.title = `Supplied values range from ${min} to ${max}`;
+    }
 }
 
 
@@ -651,86 +868,17 @@ let incidentsOverTimeChart = null;
 let requestStatusChart = null;
 
 function updateNewCharts() {
-    const timeCanvas = document.getElementById("incidentsOverTimeChart");
     const statusCanvas = document.getElementById("requestStatusChart");
 
-    if (!timeCanvas || !statusCanvas || typeof Chart === "undefined") {
+    if (!statusCanvas || typeof Chart === "undefined") {
         return;
     }
 
-    // Group incidents by date
-    const dailyCounts = {};
-
-    incidents.forEach((incident) => {
-        const rawDate =
-            incident.timestamp ||
-            incident.createdAt ||
-            incident.serverReceivedAt;
-
-        if (!rawDate) return;
-
-        const date = new Date(rawDate);
-
-        if (isNaN(date.getTime())) return;
-
-        const day = date.toLocaleDateString();
-        dailyCounts[day] = (dailyCounts[day] || 0) + 1;
-    });
-
-    const sortedDays = Object.keys(dailyCounts).sort(
-        (a, b) => new Date(a) - new Date(b)
-    );
-
-    const timeLabels = sortedDays.length ? sortedDays : ["No data"];
-    const timeValues = sortedDays.map((day) => dailyCounts[day]);
-
-    if (incidentsOverTimeChart) {
-        incidentsOverTimeChart.destroy();
-    }
-
-    incidentsOverTimeChart = new Chart(timeCanvas, {
-        type: "line",
-        data: {
-            labels: timeLabels,
-            datasets: [{
-                label: "Incidents",
-                data: timeValues.length ? timeValues : [0],
-                borderColor: "#008080",
-                backgroundColor: "rgba(0, 128, 128, 0.15)",
-                fill: true,
-                tension: 0.3
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { precision: 0 }
-                }
-            }
-        }
-    });
-
-    // Count incidents by status
-    const statusCounts = {
-        Created: 0,
-        Acknowledged: 0,
-        Resolved: 0
-    };
-
-    incidents.forEach((incident) => {
-        const status = String(incident.status || "Created").toLowerCase();
-
-        if (status === "acknowledged") {
-            statusCounts.Acknowledged++;
-        } else if (status === "resolved" || status === "closed") {
-            statusCounts.Resolved++;
-        } else {
-            statusCounts.Created++;
-        }
-    });
+    const statusCounts = incidents.reduce((counts, incident) => {
+        const status = String(incident.status || "Unknown").trim() || "Unknown";
+        counts[status] = (counts[status] || 0) + 1;
+        return counts;
+    }, {});
 
     if (requestStatusChart) {
         requestStatusChart.destroy();
@@ -739,10 +887,10 @@ function updateNewCharts() {
     requestStatusChart = new Chart(statusCanvas, {
         type: "doughnut",
         data: {
-            labels: Object.keys(statusCounts),
+            labels: Object.keys(statusCounts).length ? Object.keys(statusCounts) : ["No data"],
             datasets: [{
-                data: Object.values(statusCounts),
-                backgroundColor: ["#64748b", "#f59e0b", "#10b981"]
+                data: Object.keys(statusCounts).length ? Object.values(statusCounts) : [0],
+                backgroundColor: ["#64748b", "#f59e0b", "#10b981", "#0284c7", "#e11d48"]
             }]
         },
         options: {
@@ -752,94 +900,13 @@ function updateNewCharts() {
     });
 }
 
-function updateSeverityChart() {
-
-    const container =
-        document.getElementById(
-            "severityDistribution"
-        );
-
-
-    const levels = [
-        { label: "1", min: 1, max: 1 },
-        { label: "2", min: 2, max: 2 },
-        { label: "3", min: 3, max: 3 },
-        { label: "4", min: 4, max: 5 },
-        { label: "6", min: 6, max: 6 },
-        { label: "7", min: 7, max: 8 },
-        { label: "9", min: 9, max: 10 }
-    ];
-
-
-    const values =
-        levels.map(level => {
-
-            return incidents.filter(
-                incident => {
-
-                    const severity =
-                        Number(
-                            incident.severity
-                        );
-
-                    return (
-                        severity >= level.min &&
-                        severity <= level.max
-                    );
-                }
-            ).length;
-
-        });
-
-
-    const max =
-        Math.max(...values, 1);
-
-
-    container.innerHTML =
-        levels.map(
-            (level, index) => {
-
-                const count =
-                    values[index];
-
-                const height =
-                    (count / max) * 100;
-
-
-                return `
-                    <div class="severity-column">
-
-                        <div class="bar">
-                            <div
-                                class="fill"
-                                style="height:${height}%"
-                            ></div>
-                        </div>
-
-                        <span>
-                            ${level.label}
-                        </span>
-
-                    </div>
-                `;
-
-            }
-        ).join("");
-}
-
-
 // ==========================================
 // PRIORITY ALERT
 // ==========================================
 
 function updatePriorityAlert() {
 
-    const critical =
-        incidents.filter(
-            incident =>
-                Number(incident.severity) >= 9
-        );
+    const critical = affectedAreas.filter(area => ["high", "critical"].includes(area.severityLevel));
 
 
     const alert =
@@ -862,7 +929,7 @@ function updatePriorityAlert() {
             "rgba(54,211,153,.15)";
 
         text.textContent =
-            "No critical incidents detected.";
+            "No high-priority areas detected.";
 
         return;
     }
@@ -875,22 +942,8 @@ function updatePriorityAlert() {
         "rgba(255,59,77,.15)";
 
 
-    const medicalCritical =
-        critical.filter(
-            i => i.type === "MEDICAL"
-        ).length;
-
-
     text.textContent =
-        `${critical.length} critical incident${
-            critical.length === 1 ? "" : "s"
-        } require priority attention${
-            medicalCritical
-                ? `, including ${medicalCritical} critical medical request${
-                    medicalCritical === 1 ? "" : "s"
-                  }`
-                : ""
-        }.`;
+        `${critical.length} high-priority area${critical.length === 1 ? "" : "s"} require attention.`;
 }
 
 
@@ -912,7 +965,7 @@ function openIncident(incident) {
 
 
     const severity =
-        Number(incident.severity);
+        getFiniteNumber(incident.severity);
 
     const className =
         severityClass(severity);
@@ -936,7 +989,7 @@ function openIncident(incident) {
                     background:${typeColor(incident.type)}18;
                 "
             >
-                SEVERITY ${severity}/10
+                SUPPLIED SEVERITY ${Number.isFinite(severity) ? severity : "Unknown"}
             </div>
 
         </div>
@@ -993,7 +1046,7 @@ function openIncident(incident) {
                 <label>LATITUDE</label>
 
                 <strong>
-                    ${Number(incident.latitude).toFixed(7)}
+                    ${getFiniteNumber(incident.latitude)?.toFixed(7) ?? "Unknown"}
                 </strong>
 
             </div>
@@ -1004,7 +1057,7 @@ function openIncident(incident) {
                 <label>LONGITUDE</label>
 
                 <strong>
-                    ${Number(incident.longitude).toFixed(7)}
+                    ${getFiniteNumber(incident.longitude)?.toFixed(7) ?? "Unknown"}
                 </strong>
 
             </div>
@@ -1036,13 +1089,7 @@ function openIncident(incident) {
                         incident.type
                     )}"
                 >
-                    ${severity >= 9
-                        ? "CRITICAL"
-                        : severity >= 7
-                            ? "HIGH"
-                            : severity >= 4
-                                ? "MEDIUM"
-                                : "LOW"}
+                    ${reportConfidence.get(incident.id)?.status || "Pending"} · ${reportConfidence.get(incident.id)?.score ?? 20}% confidence
                 </strong>
 
             </div>
@@ -1055,19 +1102,12 @@ function openIncident(incident) {
 
 
     // Focus map on incident
-    if (
-        Number.isFinite(
-            Number(incident.latitude)
-        ) &&
-        Number.isFinite(
-            Number(incident.longitude)
-        )
-    ) {
+    if (isValidLocation(incident)) {
 
         map.flyTo(
             [
-                Number(incident.latitude),
-                Number(incident.longitude)
+                getFiniteNumber(incident.latitude),
+                getFiniteNumber(incident.longitude)
             ],
             17,
             {

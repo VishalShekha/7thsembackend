@@ -121,8 +121,8 @@
                     checked
                 />
 
-                <span class="severity-badge critical">9–10</span>
-                Critical
+                <span class="severity-badge critical">High</span>
+                Highest supplied values
             </label>
 
             <label class="severity-filter">
@@ -133,8 +133,8 @@
                     checked
                 />
 
-                <span class="severity-badge high">7–8</span>
-                High
+                <span class="severity-badge high">High</span>
+                Higher supplied values
             </label>
 
             <label class="severity-filter">
@@ -145,8 +145,8 @@
                     checked
                 />
 
-                <span class="severity-badge medium">4–6</span>
-                Medium
+                <span class="severity-badge medium">Mid</span>
+                Mid-range values
             </label>
 
             <label class="severity-filter">
@@ -157,8 +157,8 @@
                     checked
                 />
 
-                <span class="severity-badge low">1–3</span>
-                Low
+                <span class="severity-badge low">Low</span>
+                Lower supplied values
             </label>
 
         </div>
@@ -174,18 +174,6 @@
 
                 <option value="ALL">
                     All statuses
-                </option>
-
-                <option value="CREATED">
-                    Created
-                </option>
-
-                <option value="ACKNOWLEDGED">
-                    Acknowledged
-                </option>
-
-                <option value="RESOLVED">
-                    Resolved
                 </option>
 
             </select>
@@ -254,7 +242,7 @@
             <div class="stat-card">
 
                 <div class="stat-label">
-                    ACTIVE INCIDENTS
+                    UNIQUE REPORTS
                 </div>
 
                 <div
@@ -265,7 +253,7 @@
                 </div>
 
                 <div class="stat-description">
-                    All reported incidents
+                    Duplicate IDs excluded
                 </div>
 
             </div>
@@ -274,7 +262,7 @@
             <div class="stat-card danger">
 
                 <div class="stat-label">
-                    CRITICAL
+                    PENDING VERIFICATION
                 </div>
 
                 <div
@@ -285,7 +273,7 @@
                 </div>
 
                 <div class="stat-description">
-                    Severity 9–10
+                    Reports without independent corroboration
                 </div>
 
             </div>
@@ -294,7 +282,7 @@
             <div class="stat-card warning">
 
                 <div class="stat-label">
-                    HIGH PRIORITY
+                    DUPLICATE REPORTS
                 </div>
 
                 <div
@@ -305,7 +293,7 @@
                 </div>
 
                 <div class="stat-description">
-                    Severity 7–8
+                    Repeated records with the same ID
                 </div>
 
             </div>
@@ -314,7 +302,7 @@
             <div class="stat-card medical-card">
 
                 <div class="stat-label">
-                    MEDICAL
+                    AFFECTED AREAS
                 </div>
 
                 <div
@@ -325,13 +313,18 @@
                 </div>
 
                 <div class="stat-description">
-                    Medical requests
+                    Geographic report clusters
                 </div>
 
             </div>
 
         </section>
 
+
+        <section class="panel operations-panel">
+            <div class="panel-header"><div><h3>Affected Areas</h3><span>Fixed 1 km × 1 km latitude/longitude grid cells · click an area to inspect its reports</span></div></div>
+            <div id="areaList" class="table-wrap"></div>
+        </section>
 
         <!-- MAP -->
 
@@ -360,6 +353,7 @@
             <div id="map"></div>
 
             <div class="map-legend">
+                <strong>1 km grid severity</strong>
 
                 <div>
                     <span class="legend-dot critical-dot"></span>
@@ -385,6 +379,18 @@
 
         </section>
 
+        <section class="panel operations-panel selected-area-panel">
+            <div class="panel-header">
+                <div>
+                    <h3>Selected Area Statistics</h3>
+                    <span>Click a shaded map cell or a report to view its area's requests</span>
+                </div>
+            </div>
+            <div id="areaDetails">
+                <div class="empty-state">Select a map cell or report to see its area statistics.</div>
+            </div>
+        </section>
+
 
         <!-- LOWER AREA -->
 
@@ -397,7 +403,7 @@
                 <div class="panel-header">
 
                     <div>
-                        <h3>Recent Incidents</h3>
+                        <h3>Report Verification & Requests</h3>
                         <span id="visibleCount">
                             0 incidents
                         </span>
@@ -421,6 +427,8 @@
 
                 </div>
 
+                <p class="decision-note">Confidence is a triage signal, not proof. Verified requires a reporter ID and a nearby same-type report from a different reporter; repeated IDs are marked potential duplicates.</p>
+                <div id="verificationSummary" class="verification-summary"></div>
                 <div
                     id="incidentList"
                     class="incident-list"
@@ -510,7 +518,7 @@
                     <div class="analysis-block">
 
                         <div class="analysis-title">
-                            SEVERITY DISTRIBUTION
+                            SUPPLIED SEVERITY VALUES
                         </div>
 
                         <div
@@ -521,11 +529,6 @@
                     </div>
 
                                         
-                    <div class="analysis-block">
-                        <h3>INCIDENTS OVER TIME</h3>
-                        <canvas id="incidentsOverTimeChart"></canvas>
-                    </div>
-
                     <div class="analysis-block">
                         <h3>REQUEST STATUS DISTRIBUTION</h3>
                         <canvas id="requestStatusChart"></canvas>
@@ -592,6 +595,7 @@
     crossorigin=""
 ></script>
 
+<script src="area-aggregation.js"></script>
 <script src="app.js"></script>
 
 </body>
